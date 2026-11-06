@@ -521,7 +521,8 @@
   const maxW = () => 27000 / vis;
   /* the middle of the view stays over Switzerland */
   const BB = window.SWISS ? [window.SWISS.bbox[0] + 1500, window.SWISS.bbox[1] + 1500, window.SWISS.bbox[2] - 1500, window.SWISS.bbox[3] - 1500] : [0, 0, 730, 1000];
-  const clampView = () => { view.w = clamp(view.w, 90, maxW()); view.cx = clamp(view.cx, BB[0], BB[2]); view.cy = clamp(view.cy, BB[1], BB[3]); };
+  const MIN_W = 160;
+  const clampView = () => { view.w = clamp(view.w, MIN_W, maxW()); view.cx = clamp(view.cx, BB[0], BB[2]); view.cy = clamp(view.cy, BB[1], BB[3]); };
   function commitView() {
     dirty = false;
     const h = vh / kpx(), f = 1 + SVG_PAD * 2;
@@ -570,14 +571,14 @@
     if (moving) return;
     if (!base) commitView();
     moving = true;
-    svg.style.willChange = 'transform'; ovLayer.style.willChange = 'transform'; ovScale.style.willChange = 'transform';
+    ovLayer.style.willChange = 'transform'; ovScale.style.willChange = 'transform';
     mapEl.classList.add('is-moving');
   }
   /* the motion settled: render in full; a move you made also sets the list to what the map shows */
   function endMove(list) {
     if (!moving) return;
     moving = false;
-    svg.style.willChange = ''; ovLayer.style.willChange = ''; ovScale.style.willChange = '';
+    ovLayer.style.willChange = ''; ovScale.style.willChange = '';
     mapEl.classList.remove('is-moving');
     commitView();
     if (list) afterUserMove();
@@ -757,7 +758,7 @@
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const [x, y] of points) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
     const bw = Math.max(minW || 80, x1 - x0), bh = Math.max(minW || 80, y1 - y0);
-    const w = clamp(vw / Math.min(aw / bw, ah / bh), 120, maxW()), k = vw / w;
+    const w = clamp(vw / Math.min(aw / bw, ah / bh), MIN_W, maxW()), k = vw / w;
     const acx = ins.left + pad + aw / 2, acy = ins.top + pinH + ah / 2;
     return {w, cx: clamp((x0 + x1) / 2 - (acx - vw / 2) / k, BB[0], BB[2]), cy: clamp((y0 + y1) / 2 - (acy - vh / 2) / k, BB[1], BB[3])};
   }
@@ -793,7 +794,7 @@
   function zoomTarget(cx, cy, f) {
     const r = mapEl.getBoundingClientRect(), mx = cx - r.left, my = cy - r.top;
     const u = [(mx - vw / 2) / kpx() + view.cx, (my - vh / 2) / kpx() + view.cy];
-    const w = clamp(view.w * f, 90, maxW()), k = vw / w;
+    const w = clamp(view.w * f, MIN_W, maxW()), k = vw / w;
     return {w, cx: u[0] - (mx - vw / 2) / k, cy: u[1] - (my - vh / 2) / k};
   }
   function zoomAt(cx, cy, f) { Object.assign(view, zoomTarget(cx, cy, f)); applyView(); }
@@ -919,7 +920,7 @@
       moved = 99;
       beginMove();
       const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), r = mapEl.getBoundingClientRect();
-      const w = clamp(gest.view.w * gest.dist / Math.max(1, d), 90, maxW()), k1 = vw / w;
+      const w = clamp(gest.view.w * gest.dist / Math.max(1, d), MIN_W, maxW()), k1 = vw / w;
       const ux = (gest.mid.x - r.left - vw / 2) / k0 + gest.view.cx, uy = (gest.mid.y - r.top - vh / 2) / k0 + gest.view.cy;
       view.w = w; view.cx = ux - (m.x - r.left - vw / 2) / k1; view.cy = uy - (m.y - r.top - vh / 2) / k1;
     }
